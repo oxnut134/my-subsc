@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import type Stripe from "stripe";
-import { getBillingAction, toSubscriptionStatus } from "@/lib/subscriptions";
+import {
+  canStartCheckout,
+  getBillingAction,
+  toSubscriptionStatus,
+} from "@/lib/subscriptions";
 
 // 実際の DB(RDS)に接続しないよう、db を差し替える。
 // 誤って DB 操作が呼ばれた場合は、黙って通らずにテストを失敗させる。
@@ -67,5 +71,23 @@ describe("getBillingAction", () => {
 
   it('returns "update_payment" for a payment_failed subscription', () => {
     expect(getBillingAction("payment_failed")).toBe("update_payment");
+  });
+});
+
+describe("canStartCheckout", () => {
+  it("allows checkout when there is no subscription", () => {
+    expect(canStartCheckout(null)).toBe(true);
+  });
+
+  it("allows checkout for a canceled subscription", () => {
+    expect(canStartCheckout("canceled")).toBe(true);
+  });
+
+  it("rejects checkout for a payment_failed subscription", () => {
+    expect(canStartCheckout("payment_failed")).toBe(false);
+  });
+
+  it("rejects checkout for an active subscription", () => {
+    expect(canStartCheckout("active")).toBe(false);
   });
 });

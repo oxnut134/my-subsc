@@ -5,6 +5,12 @@ import { subscriptions } from "@/db/schema";
 
 export type SubscriptionStatus = (typeof subscriptions.$inferSelect)["status"];
 
+// 新規契約(Checkout)を始めてよいか。契約が無いか、canceled の場合だけ許可する
+// (payment_failed は、二重請求を防ぐため、新規契約ではなく支払い方法の更新に誘導する)
+export function canStartCheckout(status: SubscriptionStatus | null) {
+  return status === null || status === "canceled";
+}
+
 export type BillingAction = "upgrade" | "manage" | "update_payment";
 
 // 契約の status から、画面に出すボタンの種類を返す(契約が無い場合は null を渡す)
