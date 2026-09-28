@@ -3,8 +3,8 @@ import Stripe from "stripe";
 import { createCheckoutSession } from "stripe-subscription-kit";
 import { auth } from "@/auth";
 
-const SUCCESS_URL = "http://localhost:3000/success";
-const CANCEL_URL = "http://localhost:3000/cancel";
+const SUCCESS_URL = "http://localhost:3000/habits?checkout=success";
+const CANCEL_URL = "http://localhost:3000/habits?checkout=cancel";
 
 export async function POST() {
   const session = await auth();

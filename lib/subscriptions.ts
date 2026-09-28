@@ -3,7 +3,23 @@ import type Stripe from "stripe";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 
-type SubscriptionStatus = (typeof subscriptions.$inferSelect)["status"];
+export type SubscriptionStatus = (typeof subscriptions.$inferSelect)["status"];
+
+export type BillingAction = "upgrade" | "manage" | "update_payment";
+
+// 契約の status から、画面に出すボタンの種類を返す(契約が無い場合は null を渡す)
+export function getBillingAction(
+  status: SubscriptionStatus | null
+): BillingAction {
+  switch (status) {
+    case "active":
+      return "manage";
+    case "payment_failed":
+      return "update_payment";
+    default:
+      return "upgrade";
+  }
+}
 
 // ユーザーの契約を1件返す。active な契約を優先し、無ければ最新の契約、どちらも無ければ null
 export async function getUserSubscription(userId: string) {

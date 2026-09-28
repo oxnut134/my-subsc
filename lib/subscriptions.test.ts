@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import type Stripe from "stripe";
-import { toSubscriptionStatus } from "@/lib/subscriptions";
+import { getBillingAction, toSubscriptionStatus } from "@/lib/subscriptions";
 
 // 実際の DB(RDS)に接続しないよう、db を差し替える。
 // 誤って DB 操作が呼ばれた場合は、黙って通らずにテストを失敗させる。
@@ -49,5 +49,23 @@ describe("toSubscriptionStatus", () => {
   it("returns null for an unknown status that Stripe may add in the future", () => {
     const futureStatus: Stripe.Subscription.Status = "some_future_status";
     expect(toSubscriptionStatus(futureStatus)).toBeNull();
+  });
+});
+
+describe("getBillingAction", () => {
+  it('returns "upgrade" when there is no subscription', () => {
+    expect(getBillingAction(null)).toBe("upgrade");
+  });
+
+  it('returns "upgrade" for a canceled subscription', () => {
+    expect(getBillingAction("canceled")).toBe("upgrade");
+  });
+
+  it('returns "manage" for an active subscription', () => {
+    expect(getBillingAction("active")).toBe("manage");
+  });
+
+  it('returns "update_payment" for a payment_failed subscription', () => {
+    expect(getBillingAction("payment_failed")).toBe("update_payment");
   });
 });

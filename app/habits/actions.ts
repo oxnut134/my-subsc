@@ -5,7 +5,15 @@ import { auth } from "@/auth";
 import * as habitsLib from "@/lib/habits";
 import * as habitLogsLib from "@/lib/habit-logs";
 
-export async function createHabit(formData: FormData) {
+export type CreateHabitState = {
+  error: string | null;
+};
+
+// 入力エラーと上限エラーは、画面に表示するため戻り値で返す
+export async function createHabit(
+  _prevState: CreateHabitState,
+  formData: FormData
+): Promise<CreateHabitState> {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("認証が必要です。");
@@ -13,12 +21,23 @@ export async function createHabit(formData: FormData) {
 
   const title = formData.get("title");
   if (typeof title !== "string") {
-    throw new Error("習慣名を入力してください。");
+    return { error: "習慣名を入力してください。" };
   }
 
-  await habitsLib.createHabit(session.user.id, title);
+  try {
+    await habitsLib.createHabit(session.user.id, title);
+  } catch (error) {
+    if (
+      error instanceof habitsLib.HabitValidationError ||
+      error instanceof habitsLib.HabitLimitError
+    ) {
+      return { error: error.message };
+    }
+    throw error;
+  }
 
   revalidatePath("/habits");
+  return { error: null };
 }
 
 export async function deleteHabit(habitId: string) {
