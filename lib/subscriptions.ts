@@ -1,9 +1,30 @@
-import { eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import type Stripe from "stripe";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 
 type SubscriptionStatus = (typeof subscriptions.$inferSelect)["status"];
+
+// ユーザーの契約を1件返す。active な契約を優先し、無ければ最新の契約、どちらも無ければ null
+export async function getUserSubscription(userId: string) {
+  const [subscription] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, userId))
+    .orderBy(
+      desc(sql`${subscriptions.status} = 'active'`),
+      desc(subscriptions.createdAt)
+    )
+    .limit(1);
+
+  return subscription ?? null;
+}
+
+// status が "active" の契約があるときだけ有料扱い(payment_failed, canceled は無料扱い)
+export async function isPaidUser(userId: string) {
+  const subscription = await getUserSubscription(userId);
+  return subscription?.status === "active";
+}
 
 // 想定外の Stripe status(incomplete, paused など)は null を返す
 export function toSubscriptionStatus(

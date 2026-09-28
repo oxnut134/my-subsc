@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { HabitValidationError, createHabit, listHabits } from "@/lib/habits";
+import {
+  HabitLimitError,
+  HabitValidationError,
+  createHabit,
+  listHabits,
+} from "@/lib/habits";
 
 export async function GET() {
   const session = await auth();
@@ -27,6 +32,9 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof HabitValidationError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    if (error instanceof HabitLimitError) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
     }
     throw error;
   }
